@@ -23,7 +23,10 @@ main(int argc, char ** argv) {
         int rc = 0, counter = 0;
         while (1) {
             int rc = read(parentPipe[0], &buf, 1);
-            if (rc != 1) {
+            if (rc == 0) {
+                // remote closed the pipe.
+                break;
+            } else if (rc != 1) {
                 fprintf(2, "Parent expect read() to return 1 byte, got %d bytes instead\n", rc);
                 rc = 1;
                 break;
@@ -36,7 +39,6 @@ main(int argc, char ** argv) {
             }
             ++counter;
         }
-        printf("Parent exited loop\n");
         close(parentPipe[0]);
         close(childPipe[1]);
         int childCounter = 0;
@@ -48,9 +50,10 @@ main(int argc, char ** argv) {
     } else if (pid == 0) {
         // child: ping pong n times and measure wall time
         char buf[2] = {'x', 0};
-        int n = 100, i = 0;
+        int n = 10000, i = 0;
         close(parentPipe[0]);
         close(childPipe[1]);
+        uint64 startTime = uptime();
         for (; i < n; ++i) {
             int rc = write(parentPipe[1], &buf, 1);
             if (rc != 1) {
@@ -59,14 +62,18 @@ main(int argc, char ** argv) {
             }
 
             rc = read(childPipe[0], &buf[0], 1);
-            if (rc != 1) {
+            if (rc == 0) {
+                // remote closed the pipe
+                break;
+            } else if (rc != 1) {
                 fprintf(2, "Child expect read() to return 1 byte, got %d bytes instead.\n", rc);
                 break;
             }
         }
+        uint64 endTime = uptime();
         close(parentPipe[1]);
         close(childPipe[0]);
-        // fprintf(1, "Child: ping-pong finished %d times, exiting...\n", n);
+        fprintf(1, "Child: ping-pong finished %d times. %l ticks passed. Exiting...\n", n, endTime - startTime);
         exit(i);
     } else {
         fprintf(2, "Fork error\n");

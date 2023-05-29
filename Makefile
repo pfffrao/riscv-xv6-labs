@@ -188,7 +188,9 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
-	$U/_pingpongtest\
+	$U/_pingpong\
+	$U/_pingpongtimer\
+	$U/_sleep\
 
 
 
