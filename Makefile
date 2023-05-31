@@ -191,7 +191,7 @@ UPROGS=\
 	$U/_pingpong\
 	$U/_pingpongtimer\
 	$U/_sleep\
-
+	$U/_primes\
 
 
 
