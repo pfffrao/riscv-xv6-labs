@@ -15,7 +15,7 @@ void recursiveProcess(int leftPipe[2]) {
         close(leftPipe[0]);
         return;
     }
-    printf("%d\n", prime);
+    printf("prime %d\n", prime);
     
     int child = -1;
     int rightPipe[2] = {-1, -1};

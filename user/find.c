@@ -68,7 +68,7 @@ int recursiveFindInDir(char *dir, char *filename) {
         }
         if (st.type == T_FILE || st.type == T_DEVICE) {
             if (strcmp(p, filename) == 0) {
-                printf("Found: %s\n", fullpath);
+                printf("%s\n", fullpath);
             }
         } else {
             // directory
