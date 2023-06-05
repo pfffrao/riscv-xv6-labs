@@ -57,6 +57,8 @@ memset(void *dst, int c, uint n)
 char*
 strchr(const char *s, char c)
 {
+  // given a null-terminated string s, test if c is in the str. If yes, return the char pointer in
+  // the string s where it matches with c.
   for(; *s; s++)
     if(*s == c)
       return (char*)s;

@@ -1,6 +1,7 @@
 // Shell.
 
 #include "kernel/types.h"
+#include "kernel/stat.h"
 #include "user/user.h"
 #include "kernel/fcntl.h"
 
@@ -12,6 +13,8 @@
 #define BACK  5
 
 #define MAXARGS 10
+
+int DEBUG = 0;
 
 struct cmd {
   int type;
@@ -134,7 +137,23 @@ runcmd(struct cmd *cmd)
 int
 getcmd(char *buf, int nbuf)
 {
-  write(2, "$ ", 2);
+  // if stdin is a file, don't print this
+  struct stat s;
+  if (fstat(0, &s) == 0) {
+    if (DEBUG) {
+      printf("fstat.type of stdin: %d\n", s.type);
+    }
+    if (s.type != T_FILE) {
+      write(2, "$ ", 2);
+    }
+  } else {
+    // failed to fstat, it's okay, we switch to old behavior...
+    if (DEBUG) {
+      fprintf(2, "Failed to do fstat on fd 0\n");
+    }
+    write(2, "$ ", 2);
+  }
+
   memset(buf, 0, nbuf);
   gets(buf, nbuf);
   if(buf[0] == 0) // EOF
@@ -145,7 +164,7 @@ getcmd(char *buf, int nbuf)
 int
 main(void)
 {
-  static char buf[100];
+  static char buf[256];
   int fd;
 
   // Ensure that three file descriptors are open.
@@ -266,6 +285,12 @@ char symbols[] = "<|>&;()";
 int
 gettoken(char **ps, char *es, char **q, char **eq)
 {
+  // proceed *ps to get the next valid token (up to es). Store the location of the first char in
+  // the valid token in *q, and the location of the last char in the token in *eq (e.g., if the 
+  // valid token is ">>", then *eq will point to the second ">"). Return the equivalent int value
+  // of the token.
+  // For symbols, use q and eq arguments to get the start and end of it. 
+  // For operators, use the ret to get the operator.
   char *s;
   int ret;
 
@@ -284,16 +309,17 @@ gettoken(char **ps, char *es, char **q, char **eq)
   case ';':
   case '&':
   case '<':
-    s++;
+    s++;  // ret and **q is equal
     break;
   case '>':
     s++;
     if(*s == '>'){
-      ret = '+';
+      ret = '+';  // ret and *q diverge.
       s++;
     }
     break;
   default:
+    // Here we get ourself a symbol. Maybe 'a' means that.
     ret = 'a';
     while(s < es && !strchr(whitespace, *s) && !strchr(symbols, *s))
       s++;
@@ -311,6 +337,8 @@ gettoken(char **ps, char *es, char **q, char **eq)
 int
 peek(char **ps, char *es, char *toks)
 {
+  // Proceed *ps so that it skips all the whitespaces and reaches the first token as specified in toks.
+  // return true if *ps is now a token, false otherwise.
   char *s;
 
   s = *ps;
@@ -362,6 +390,7 @@ parseline(char **ps, char *es)
 struct cmd*
 parsepipe(char **ps, char *es)
 {
+  // Recursively parse pipe commands.
   struct cmd *cmd;
 
   cmd = parseexec(ps, es);
