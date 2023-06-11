@@ -14,7 +14,7 @@
 
 #define MAXARGS 10
 
-int DEBUG = 0;
+int DEBUG = 1;
 
 struct cmd {
   int type;
@@ -80,7 +80,14 @@ runcmd(struct cmd *cmd)
     if(ecmd->argv[0] == 0)
       exit(1);
     exec(ecmd->argv[0], ecmd->argv);
-    fprintf(2, "exec %s failed\n", ecmd->argv[0]);
+    fprintf(2, "exec %s failed.\n", ecmd->argv[0]);
+    for (int i = 1; i < 10; ++i) {
+      if (ecmd->argv[i]) {
+        fprintf(2, "\targ %d: %s.\n", i, ecmd->argv[i]);
+      } else {
+        break;
+      }
+    }
     break;
 
   case REDIR:
@@ -337,8 +344,9 @@ gettoken(char **ps, char *es, char **q, char **eq)
 int
 peek(char **ps, char *es, char *toks)
 {
-  // Proceed *ps so that it skips all the whitespaces and reaches the first token as specified in toks.
+  // Proceed *ps so that it skips all the whitespaces and reaches the first token.
   // return true if *ps is now a token, false otherwise.
+  // A token is neither a whitespace, nor the ones specified in the toks.
   char *s;
 
   s = *ps;
@@ -358,6 +366,11 @@ parsecmd(char *s)
 {
   char *es;
   struct cmd *cmd;
+  char *info = "parsing: ";
+  if (DEBUG) {
+    write(1, info, strlen(info));
+    write(1, s, strlen(s));
+  }
 
   es = s + strlen(s);
   cmd = parseline(&s, es);
