@@ -3,6 +3,7 @@
 #include "kernel/types.h"
 #include "kernel/stat.h"
 #include "user/user.h"
+#include "kernel/fs.h"
 #include "kernel/fcntl.h"
 
 // Parsed command representation
@@ -14,7 +15,7 @@
 
 #define MAXARGS 10
 
-int DEBUG = 1;
+int DEBUG = 0;
 
 struct cmd {
   int type;
@@ -142,6 +143,159 @@ runcmd(struct cmd *cmd)
 }
 
 int
+startautoc(char* s, char* e, int max) {
+  // given a partial path [s, e), try to auto complete the full path of the file.
+  // the remaining number of characters we can write to e is max.
+  // return an int indicating how many characters we wrote to e.
+  if (DEBUG) {
+    printf("\n\tstartautoc. e-s=%d, max=%d\n", (int)(e - s), max);
+  }
+
+  *e = 0;
+  int dirfd = open(".", O_RDONLY);
+  if (dirfd < 0) {
+    return 0;
+  }
+  struct dirent de;
+  struct stat st;
+  char filename[128];
+  int len = 0;
+  while (read(dirfd, &de, sizeof(de)) == sizeof(de)) {
+    if (de.inum == 0) continue;
+    int n = strlen(de.name);
+    char *scpy = s;  // make a copy of s
+    if (max + (int)(e - scpy) < n) {
+      // the filename won't fit, proceed to next file
+
+      if (DEBUG) {
+        printf("\n\tlooks like filename won't fit, n=%d, max=%d\n", n, max);
+      }
+
+      continue;;
+    }
+    memset(&filename, 0, 128);
+    memmove(&filename[0], de.name, n);
+    int fd = open(&filename[0], O_RDONLY);
+    if (fd < 0) {
+      continue;
+    }
+    
+    if (fstat(fd, &st)) {
+      close(fd);
+      continue;
+    }
+    if (st.type == T_FILE) {
+
+      if (DEBUG) {
+        printf("\tFile %s: %s - |%s|", filename, "Regular file", s);
+      }
+
+      int i = 0;
+      for (; i < 128 && scpy != e; ++i, ++scpy) {
+        if (filename[i] != *scpy) {
+          break;
+        }
+      }
+      if (scpy == e) {
+        // got one candidate
+        if (DEBUG) {
+          printf(" - Match\n");
+        }
+        // if full match write a space to confirm
+        char *p = filename[i] ? &filename[i] : " ";
+        if (strlen(p) < max) {
+          len = strlen(p);
+          write(0, p, len);
+          memcpy(e, p, len);
+          close(fd);
+          break;
+        }
+      } else {
+        if (DEBUG) {
+          printf(" - Mismatch\n");
+        }
+      }
+    } else {
+      if (DEBUG) {
+        printf("\tFile %s: %s\n", filename, "Other");
+      }
+    }
+    close(fd);
+  }
+  close(dirfd);
+
+  return len;
+}
+
+char*
+lfindspace(char* start, char* p) {
+  // starting from p, find the first space on it's left, upto start
+  while (p != start) {
+    if (*p == ' ') {
+      break;
+    }
+    --p;
+  }
+  return p;
+}
+
+// Basically the replicate of gets() with the extension for auto completion.
+// Upon receiving tab, it will try to autocomplete the file name.
+char*
+autocgets(char *buf, int max)
+{
+  int i, cc;
+  char c;
+  // int debug = 1;
+
+  for(i=0; i+1 < max; ){
+    cc = read(0, &c, 1);
+    if (DEBUG) {
+      if (c == '\t') {
+        printf("Read tab\n");
+      } else if (c == ' ') {
+        printf("Read space\n");
+      } else if (c == '\n') {
+        printf("Read newline\n");
+      } else if (c == '\b') {
+        printf("Read backspace\n");
+      } else {
+        printf("Read %c\n", c);
+      }
+    }
+    if(cc < 1)
+      break;
+    if(c == '\n' || c == '\r') {
+      buf[i++] = c;
+      break;
+    } else if (c == '\t') {
+
+      // what to do when we receive the tab?
+      if (DEBUG) {
+        printf("starting autoc, buflen: %d. content: |%s|\n", i, buf);
+      }
+      char *e = &buf[i];
+      char *s = lfindspace(&buf[0], &buf[i]);
+      if (*s == ' ') ++s;
+      if (s != e) {
+        int len = startautoc(s, e, max - i);
+
+        if (DEBUG) {
+          printf("\nWritten %d character\n", len);
+        }
+
+        i += len;
+      }
+
+    } else {
+      buf[i++] = c;
+    }
+  }
+  buf[i] = '\0';
+  return buf;
+}
+
+int
 getcmd(char *buf, int nbuf)
 {
   // if stdin is a file, don't print this
@@ -162,7 +316,7 @@ getcmd(char *buf, int nbuf)
   }
 
   memset(buf, 0, nbuf);
-  gets(buf, nbuf);
+  autocgets(buf, nbuf);
   if(buf[0] == 0) // EOF
     return -1;
   return 0;

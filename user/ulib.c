@@ -76,13 +76,8 @@ gets(char *buf, int max)
     if(cc < 1)
       break;
     buf[i++] = c;
-    if(c == '\n' || c == '\r')
+    if(c == '\n' || c == '\r') {
       break;
-    else if (c == '\t') {
-      char *msg = "Got a tab";
-      write(0, msg, strlen(msg));
-      memcpy(&buf[i], msg, strlen(msg));
-      i += strlen(msg);
     }
   }
   buf[i] = '\0';

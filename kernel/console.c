@@ -115,9 +115,13 @@ consoleread(int user_dst, uint64 dst, int n)
     dst++;
     --n;
 
-    if(c == '\n' || c == '\t'){
-      // a whole line has arrived or a request for auto-completiion is received, return to
+    if(c == '\n'){
+      // a whole line has arrived, return to
       // the user-level read().
+      break;
+    }
+    if (c == '\t') {
+      // a request for auto-completion is received
       break;
     }
   }
@@ -155,6 +159,12 @@ consoleintr(int c)
       consputc(BACKSPACE);
     }
     break;
+  case '\t':  // tab for autocompletion request
+    // store for consumption by consoleread().
+    cons.buf[cons.e++ % INPUT_BUF_SIZE] = c;
+    cons.w = cons.e;
+    wakeup(&cons.r);
+    break;
   default:
     if(c != 0 && cons.e-cons.r < INPUT_BUF_SIZE){
       c = (c == '\r') ? '\n' : c;
@@ -165,8 +175,8 @@ consoleintr(int c)
       // store for consumption by consoleread().
       cons.buf[cons.e++ % INPUT_BUF_SIZE] = c;
 
-      if(c == '\n' || c == C('D') || cons.e-cons.r == INPUT_BUF_SIZE || c == '\t'){
-        // wake up consoleread() if a whole line (or end-of-file, or a tab for auto-completion)
+      if(c == '\n' || c == C('D') || cons.e-cons.r == INPUT_BUF_SIZE){
+        // wake up consoleread() if a whole line (or end-of-file)
         // has arrived.
         cons.w = cons.e;
         wakeup(&cons.r);
