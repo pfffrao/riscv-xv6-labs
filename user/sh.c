@@ -241,6 +241,15 @@ lfindspace(char* start, char* p) {
 
 // Basically the replicate of gets() with the extension for auto completion.
 // Upon receiving tab, it will try to autocomplete the file name.
+// TODO: improve the auto-completion to overcome the current limitation:
+// Once tabbed, the previous char's cannot be modified (kernel console limitation)
+// This is because backspace are only supported in kernel space, kernel modify its buffer to 
+// reflect backspaces, and send to the userspace the final output.
+// The solution should be extend the kernel to allow binding some user function when a tab is 
+// received. The user function should then grab the current buffer content, generate 
+// auto-completion suggestion and return it to the kernel.
+// Bash does this using the readline library: 
+// https://stackoverflow.com/questions/5570795/how-does-bash-tab-completion-work
 char*
 autocgets(char *buf, int max)
 {
