@@ -3,6 +3,8 @@
 #include "kernel/stat.h"
 #include "user/user.h"
 
+static int DEBUG = 0;
+
 int
 main(int argc, char *argv[])
 {
@@ -13,10 +15,17 @@ main(int argc, char *argv[])
     fprintf(2, "Usage: %s mask command\n", argv[0]);
     exit(1);
   }
+  int mask = atoi(argv[1]);
+  if (DEBUG) {
+    printf("trace using mask %d.\n", mask);
+  }
 
-  if (trace(atoi(argv[1])) < 0) {
+  if (trace(mask) < 0) {
     fprintf(2, "%s: trace failed\n", argv[0]);
     exit(1);
+  }
+  if (DEBUG) {
+    printf("trace returned.\n");
   }
   
   for(i = 2; i < argc && i < MAXARG; i++){
