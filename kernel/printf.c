@@ -50,6 +50,22 @@ printint(int xx, int base, int sign)
 }
 
 static void
+printuint64(uint64 xx, int base)
+{
+  // 2^64 – 1 = 18,446,744,073,709,551,615
+  char buf[20];
+  int i;
+
+  i = 0;
+  do {
+    buf[i++] = digits[xx % base];
+  } while((xx /= base) != 0);
+
+  while(--i >= 0)
+    consputc(buf[i]);
+}
+
+static void
 printptr(uint64 x)
 {
   int i;
@@ -89,6 +105,16 @@ printf(char *fmt, ...)
       break;
     case 'x':
       printint(va_arg(ap, int), 16, 1);
+      break;
+    case 'u':
+      c = fmt[++i] & 0xff;
+      if (c == 'l') {
+        printuint64(va_arg(ap, uint64), 10);
+      } else {
+        // Print unknown % sequence to draw attention.
+        consputc('%');
+        consputc(c);
+      }
       break;
     case 'p':
       printptr(va_arg(ap, uint64));

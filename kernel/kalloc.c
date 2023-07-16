@@ -54,6 +54,7 @@ kfree(void *pa)
   // Fill with junk to catch dangling refs.
   memset(pa, 1, PGSIZE);
 
+  // run is stored in the page since it's not used anyway.
   r = (struct run*)pa;
 
   acquire(&kmem.lock);
@@ -79,4 +80,18 @@ kalloc(void)
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
+}
+
+uint64
+kgetfreemem()
+{
+  uint64 freemem = 0;
+  acquire(&kmem.lock);
+  struct run* r = kmem.freelist;
+  while (r) {
+    r = r->next;
+    freemem += PGSIZE;
+  }
+  release(&kmem.lock);
+  return freemem;
 }
