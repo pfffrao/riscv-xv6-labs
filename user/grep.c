@@ -7,6 +7,7 @@
 
 char buf[1024];
 int match(char*, char*);
+static int DEBUG = 0;
 
 void
 grep(char *pattern, int fd)
@@ -49,6 +50,9 @@ main(int argc, char *argv[])
   if(argc <= 2){
     grep(pattern, 0);
     exit(0);
+  }
+  if (DEBUG) {
+    printf("grep: Using pattern %s\n", pattern);
   }
 
   for(i = 2; i < argc; i++){

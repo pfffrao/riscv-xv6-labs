@@ -103,7 +103,7 @@ pop_off(void)
   if(intr_get())
     panic("pop_off - interruptible");
   if(c->noff < 1)
-    panic("pop_off");
+    panic("push_off - pop_off mismatch");
   c->noff -= 1;
   if(c->noff == 0 && c->intena)
     intr_on();

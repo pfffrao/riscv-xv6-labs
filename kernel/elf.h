@@ -24,7 +24,7 @@ struct elfhdr {
 // Program section header
 struct proghdr {
   uint32 type;
-  uint32 flags;
+  uint32 flags;  // permission
   uint64 off;
   uint64 vaddr;
   uint64 paddr;
