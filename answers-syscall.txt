@@ -1,0 +1,8 @@
+1. Infer the caller from the backtrace, what function called syscall()
+usertrap() in kernel/trap.c
+The code in trampoline.S will load the kernel stack and registers from the kernel frame and 
+jump to usertrap to start executing in kernel mode.
+
+2. p->trapframe->a7 contains the number of the syscall. 
+When userspace does ecall to trap into kernel, the kernel will look at the number in a7 
+and find the corresponding syscall.
