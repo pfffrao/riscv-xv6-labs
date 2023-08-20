@@ -107,4 +107,7 @@ struct proc {
 
   // for trace syscall
   int tracemask;
+
+  // for syscall optimization
+  struct usyscall* usyscall;
 };

@@ -36,13 +36,20 @@ ugetpid_test()
   for (i = 0; i < 64; i++) {
     int ret = fork();
     if (ret != 0) {
+      // int mypid = getpid();
+      // printf("Parent %d waiting for %d\n", mypid, ret);
       wait(&ret);
-      if (ret != 0)
-        exit(1);
+      if (ret != 0) {
+        err("wait() failed.");
+      }
       continue;
     }
-    if (getpid() != ugetpid())
+    int syscall_pid = getpid();
+    int ugetpid_pid = ugetpid();
+    if (syscall_pid != ugetpid_pid) {
+      fprintf(2, "Expected pid %d, ugetpid returned %d\n", syscall_pid, ugetpid_pid);
       err("missmatched PID");
+    }
     exit(0);
   }
   printf("ugetpid_test: OK\n");
