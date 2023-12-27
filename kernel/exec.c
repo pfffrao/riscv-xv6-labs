@@ -49,6 +49,11 @@ exec(char *path, char **argv)
   if((pagetable = proc_pagetable(p)) == 0)
     goto bad;
 
+  if (p->pid == 1){
+    printf("Before Loading program headers\n");
+    vmprint(pagetable);
+  }
+
   // Load program into memory.
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
     // read in the prog header
@@ -63,6 +68,9 @@ exec(char *path, char **argv)
     if(ph.vaddr % PGSIZE != 0)
       goto bad;
     uint64 sz1;
+    if (p->pid == 1){
+      printf("Loading program part %d, flags: %d, size %p\n", i, ph.flags, ph.filesz);
+    }
     // allocate space for the segment represented by the header
     if((sz1 = uvmalloc(pagetable, sz, ph.vaddr + ph.memsz, flags2perm(ph.flags))) == 0)
       goto bad;
@@ -83,8 +91,20 @@ exec(char *path, char **argv)
   // Use the second as the user stack.
   sz = PGROUNDUP(sz);
   uint64 sz1;
+
+  if (p->pid == 1){
+    printf("Before allocating stack guard and stack\n");
+    vmprint(pagetable);
+  }
+
   if((sz1 = uvmalloc(pagetable, sz, sz + 2*PGSIZE, PTE_W)) == 0)
     goto bad;
+
+  if (p->pid == 1){
+    printf("After allocating stack guard and stack\n");
+    vmprint(pagetable);
+  }
+
   sz = sz1;
   uvmclear(pagetable, sz-2*PGSIZE);
   sp = sz;
@@ -133,6 +153,7 @@ exec(char *path, char **argv)
 
   // Optionally print the page table
   if (p->pid == 1){
+    printf("Print page table for pid 1\n");
     vmprint(p->pagetable);
   }
 

@@ -1,0 +1,14 @@
+Which other xv6 system call(s) could be made faster using this shared page? Explain how.
+
+Explain the output of vmprint in terms of Fig 3-4 from the text. 
+What does page 0 contain?
+The program instructions.
+
+What is in page 2?
+an empty stack guard page.
+
+When running in user mode, could the process read/write the memory mapped by page 1?
+Yes, page 1 contains the program data, the process can modify them in user space.
+
+What does the third to last page contain?
+USYSCALL page. The page where the kernel shares data with the userspace.

@@ -77,6 +77,23 @@ int
 sys_pgaccess(void)
 {
   // lab pgtbl: your code here.
+  uint64 addr;
+  int pgnum;
+  
+  uint64 bits = 0;
+  argaddr(0, &addr);
+  argint(1, &pgnum);
+  if (pgnum > 64) {
+    return -1;
+  }
+  struct proc *p = myproc();
+  int ret = pgaccess(p->pagetable, addr, pgnum, &bits);
+  if (ret != 0) {
+    return ret;
+  }
+  uint64 out;
+  argaddr(2, &out);
+  ret = copyout(p->pagetable, out, (char*) &bits, sizeof(bits));
   return 0;
 }
 #endif

@@ -207,6 +207,7 @@ proc_pagetable(struct proc *p)
     uvmfree(pagetable, 0);
     return 0;
   }
+  printf("Trampoline at physical address: %p\n", (uint64)trampoline);
 
   // map the trapframe page just below the trampoline page, for
   // trampoline.S.
@@ -216,6 +217,7 @@ proc_pagetable(struct proc *p)
     uvmfree(pagetable, 0);
     return 0;
   }
+  printf("Trapframe at physical address: %p\n", (uint64)(p->trapframe));
 
   // Map the USYSCALL page to a kalloc()'d page to store the usyscall struct.
   // This helps some syscalls to avoid trapping into kernel mode as the info
@@ -227,6 +229,7 @@ proc_pagetable(struct proc *p)
     uvmfree(pagetable, 0);
     return 0;
   }
+  printf("USYSCALL at physical address: %p\n", (uint64)(p->usyscall));
 
   return pagetable;
 }

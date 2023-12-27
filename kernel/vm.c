@@ -453,8 +453,8 @@ vmprinthelper(pagetable_t p, int level){
     } else if(pte & PTE_V){
       // For leaf page only print the PTE, don't recurse into it.
       for (int j = 0; j < level; ++j) printf(" ..");
-      uint64 child = PTE2PA(pte);
-      printf("%d: pte %p pa %p\n", i, pte, child);
+      uint64 pa = PTE2PA(pte);
+      printf("%d: pte %p pa %p\n", i, pte, pa);
     }
   }
 }
@@ -463,4 +463,33 @@ void
 vmprint(pagetable_t p){
   printf("page table %p\n", p);
   vmprinthelper(p, 1);
+}
+
+int
+pgaccess(pagetable_t pagetable, uint64 addr, int pagenum, uint64* bits) {
+  // given a buffer starting at virtual address addr, and the number of pages in this buffer 
+  // - pagenum, set the corresponding bit in the bitmask bits if that page has been accessed.
+  if (pagenum < 0 || pagenum > 64) {
+    return -1;
+  }
+  struct proc* p = myproc();
+  if (!p) {
+    return -2;
+  }
+  
+  for (int i = 0; i < pagenum; ++i) {
+    uint64 va = addr + PGSIZE * i;
+    // get the PTE
+    pte_t* pte = walk(pagetable, va, 0);
+    if (!pte) {
+      return -3;
+    }
+    if ((*pte & PTE_A) != 0) {
+      // this page is accessed by user
+      *bits |= (1 << i);
+      // clear the access bit
+      *pte &= ~PTE_A;
+    }
+  }
+  return 0;
 }
